@@ -51,12 +51,21 @@ if ask_button and prompt:
                             df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
                             if df[date_col].notna().all():
                                 for num_col in numeric_cols:
-                                    chart = alt.Chart(df).mark_line(point=True).encode(
+                                    base = alt.Chart(df).encode(
                                         x=alt.X(f"{date_col}:T", title="Date"),
-                                        y=alt.Y(f"{num_col}:Q", title=num_col.replace("_", " ").title()),
+                                        y=alt.Y(f"{num_col}:Q", title=num_col.replace("_", " ").title())
+                                    )
+                                    line = base.mark_line(point=True).encode(
                                         tooltip=[f"{date_col}:T", f"{num_col}:Q"]
-                                    ).properties(title=f"{num_col.replace('_', ' ').title()} over Time")
-                                    st.altair_chart(chart, use_container_width=True)
+                                    )
+                                    trend = base.transform_regression(
+                                        date_col, num_col
+                                    ).mark_line(
+                                        strokeDash=[5, 5], color="gray"
+                                    ).encode(
+                                        tooltip=[f"{date_col}:T", f"{num_col}:Q"]
+                                    )
+                                    st.altair_chart(line + trend, use_container_width=True)
                                     chart_drawn = True
                                     break
                         except Exception:
