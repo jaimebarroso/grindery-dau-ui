@@ -3,22 +3,22 @@ import requests
 import pandas as pd
 import altair as alt
 
-st.set_page_config(page_title="Grindery DAU Assistant", layout="centered")
-st.title("📊 Grindery DAU Assistant")
+st.set_page_config(page_title="Grindery GPT", layout="centered")
+st.title("📊 Grindery GPT")
 
-with st.expander("ℹ️ Ejemplos útiles", expanded=True):
+with st.expander("ℹ️ Useful examples", expanded=True):
     st.markdown("""
-    Prueba preguntando:
+    Try asking:
     - "Show DAU trend for the last 14 days grouped by date."
     - "Break down DAU by user type."
     - "Compare new vs returning users in the last 7 days."
     """)
 
-prompt = st.text_area("Tu pregunta", placeholder="Show DAU trend for the last 14 days grouped by date.")
+prompt = st.text_area("Your question", placeholder="Show DAU trend for the last 14 days grouped by date.")
 ask_button = st.button("Ask")
 
 if ask_button and prompt:
-    with st.spinner("Pensando..."):
+    with st.spinner("Thinking..."):
         try:
             response = requests.post(
                 "https://grindery-gpt-824949430451.europe-west1.run.app/ask",
@@ -72,8 +72,8 @@ if ask_button and prompt:
                 st.code(data["sql"], language="sql")
 
         except requests.exceptions.Timeout:
-            st.error("❌ La solicitud tardó demasiado. Intenta de nuevo.")
+            st.error("❌ It took too long. Try again.")
         except requests.exceptions.RequestException as e:
-            st.error(f"🚨 Error al contactar el backend: {str(e)}")
+            st.error(f"🚨 Error contacting backend: {str(e)}")
         except Exception as e:
-            st.error(f"🚨 Error inesperado: {str(e)}")
+            st.error(f"🚨 Unexpected Error: {str(e)}")
