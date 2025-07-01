@@ -11,7 +11,6 @@ with st.expander("ℹ️ Useful examples", expanded=True):
     Try asking:
     - "Show DAU trend for the last 14 days grouped by date."
     - "Break down DAU by user type."
-    - "Compare new vs returning users in the last 7 days."
     """)
 
 prompt = st.text_area("Your question", placeholder="Show DAU trend for the last 14 days grouped by date.")
