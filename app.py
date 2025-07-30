@@ -10,7 +10,7 @@ st.title("🤖 Grindery GPT - Data Analyst Assistant")
 
 # ✅ Obtener prompt desde la URL con st.query_params
 query_params = st.query_params if hasattr(st, 'query_params') else st.experimental_get_query_params()
-prompt = query_params.get("prompt", [""])[0].strip()
+prompt = " ".join(query_params.get("prompt", [])).strip()
 
 if not prompt:
     st.info("Add a prompt in the URL query like `?prompt=Show DAU trend for last 14 days`")
