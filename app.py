@@ -1,64 +1,60 @@
 import streamlit as st
-import pandas as pd
 import requests
-import altair as alt
 
-st.set_page_config(page_title="Grindery GPT", layout="centered")
+st.set_page_config(page_title="Grindery GPT - Data Analyst", layout="centered")
+
 st.title("🤖 Grindery GPT - Data Analyst Assistant")
 
-# ✅ Leer el prompt desde los parámetros de la URL
-query_params = st.query_params
-prompt = query_params.get("prompt", "")
-default_prompt = prompt or ""
+# Detect prompt from URL (automático si viene vía ?prompt=)
+prompt = st.experimental_get_query_params().get("prompt", [""])[0]
 
-# ✅ Cuadro de texto
-prompt_input = st.text_area("Describe your data analysis:", value=default_prompt, height=100)
-submit = st.button("Run analysis")
+# Campo editable por si el usuario quiere cambiar el texto
+user_prompt = st.text_area("Describe your data analysis:", value=prompt, key="prompt_input")
 
-if submit and prompt_input:
-    with st.spinner("Querying data..."):
+# Botón manual (sigue disponible)
+run_button = st.button("Run analysis")
+
+# Se ejecuta si se hace clic o si llegó desde URL con prompt
+if run_button or prompt:
+    with st.spinner("Running analysis..."):
         try:
             response = requests.post(
-                "https://grindery-gpt-824949430451.europe-west1.run.app/ask",
-                headers={"Content-Type": "application/json"},
-                json={"prompt": prompt_input}
+                "https://grindery-gpt-824949430451.ew.r.appspot.com/ask",
+                json={"prompt": user_prompt}
             )
-            data = response.json()
 
-            if "error" in data:
-                st.error(f"❌ Error: {data['error']}")
+            if response.ok:
+                result = response.json()
+                st.success("Analysis completed.")
+                
+                # Mostrar resumen
+                if "summary" in result:
+                    st.write("### Summary")
+                    st.markdown(result["summary"])
+
+                # Mostrar resultados en tabla
+                if "result" in result:
+                    st.write("### Result")
+                    st.dataframe(result["result"])
+
+                # Mostrar gráfico si está disponible
+                if "chart" in result:
+                    st.write("### Chart")
+                    st.plotly_chart(result["chart"])
+
+                # Mostrar SQL
+                if "sql" in result:
+                    st.write("### SQL")
+                    st.code(result["sql"], language="sql")
+
+                # Mostrar coste estimado si está disponible
+                if "estimated_cost" in result:
+                    st.caption(f"Estimated cost: ${result['estimated_cost']:.5f}")
+
             else:
-                st.success("✅ Query completed")
-
-                # Summary
-                st.subheader("📝 Summary")
-                st.write(data["response"])
-
-                # Table
-                df = pd.DataFrame(data["result"])
-                st.subheader("📊 Results")
-                st.dataframe(df)
-
-                # Export CSV
-                csv = df.to_csv(index=False).encode("utf-8")
-                st.download_button("⬇️ Download CSV", data=csv, file_name="result.csv", mime="text/csv")
-
-                # Chart
-                if "date" in df.columns and len(df.columns) >= 2:
-                    value_column = [col for col in df.columns if col != "date"][0]
-                    chart = alt.Chart(df).mark_line(point=True).encode(
-                        x="date:T",
-                        y=alt.Y(value_column, title=value_column.replace("_", " ").title())
-                    ).properties(title="📈 Trend")
-                    st.altair_chart(chart, use_container_width=True)
-
-                # SQL
-                with st.expander("📄 SQL generated"):
-                    st.code(data["sql"], language="sql")
-
-                # Cost
-                if "estimated_cost_usd" in data:
-                    st.caption(f"💰 Estimated cost: ${data['estimated_cost_usd']:.6f}")
+                st.error("Failed to generate analysis.")
+                st.text(response.text)
 
         except Exception as e:
-            st.error(f"❌ Error: {str(e)}")
+            st.error("Something went wrong.")
+            st.exception(e)
