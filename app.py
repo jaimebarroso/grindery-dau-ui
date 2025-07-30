@@ -7,11 +7,11 @@ st.set_page_config(page_title="Grindery GPT", layout="centered")
 
 st.title("🤖 Grindery GPT - Data Analyst Assistant")
 
-prompt = st.text_area("Describe tu análisis de datos:", height=100)
-submit = st.button("Ejecutar análisis")
+prompt = st.text_area("Describe your data analysis:", height=100)
+submit = st.button("Run analysis")
 
 if submit and prompt:
-    with st.spinner("Consultando datos..."):
+    with st.spinner("Querying data..."):
         try:
             response = requests.post(
                 "https://grindery-gpt-824949430451.europe-west1.run.app/ask",
@@ -23,37 +23,39 @@ if submit and prompt:
             if "error" in data:
                 st.error(f"❌ Error: {data['error']}")
             else:
-                st.success("✅ Consulta completada")
+                st.success("✅ Query completed")
 
-                # Mostrar resumen
-                st.subheader("📝 Resumen del análisis")
+                # Show summary
+                st.subheader("📝 Summary of the analysis")
                 st.write(data["response"])
 
-                # Mostrar tabla
+                # Show results table
                 df = pd.DataFrame(data["result"])
-                st.subheader("📊 Resultados")
+                st.subheader("📊 Results")
                 st.dataframe(df)
 
-                # Exportar CSV
+                # Download CSV
                 csv = df.to_csv(index=False).encode("utf-8")
-                st.download_button("⬇️ Descargar CSV", data=csv, file_name="resultado.csv", mime="text/csv")
+                st.download_button("⬇️ Download CSV", data=csv, file_name="result.csv", mime="text/csv")
 
-                # Mostrar gráfico si hay columnas date + valor
-                if "date" in df.columns and len(df.columns) >= 2:
-                    value_column = [col for col in df.columns if col != "date"][0]
+                # Show chart if there's a date column
+                date_column = next((col for col in df.columns if "date" in col.lower()), None)
+                if date_column and len(df.columns) >= 2:
+                    value_column = [col for col in df.columns if col != date_column][0]
+                    df[date_column] = pd.to_datetime(df[date_column])
                     chart = alt.Chart(df).mark_line(point=True).encode(
-                        x="date:T",
+                        x=alt.X(date_column + ":T", title="Date"),
                         y=alt.Y(value_column, title=value_column.replace("_", " ").title())
-                    ).properties(title="📈 Tendencia")
+                    ).properties(title="📈 Trend")
                     st.altair_chart(chart, use_container_width=True)
 
-                # Mostrar SQL
-                with st.expander("📄 SQL generada"):
+                # Show SQL
+                with st.expander("📄 Generated SQL"):
                     st.code(data["sql"], language="sql")
 
-                # Costo estimado
+                # Estimated cost
                 if "estimated_cost_usd" in data:
-                    st.caption(f"💰 Costo estimado: ${data['estimated_cost_usd']:.6f}")
+                    st.caption(f"💰 Estimated cost: ${data['estimated_cost_usd']:.6f}")
 
         except Exception as e:
-            st.error(f"❌ Error al procesar: {str(e)}")
+            st.error(f"❌ Error: {str(e)}")
